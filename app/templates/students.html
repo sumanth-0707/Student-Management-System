@@ -1,0 +1,174 @@
+{% extends "layout.html" %}
+
+{% block title %}Students - Student Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Students Management</h1>
+    <a href="/add-student" class="btn btn-primary">+ Add New Student</a>
+</div>
+
+<div class="search-box">
+    <input 
+        type="text" 
+        id="searchInput" 
+        class="form-control" 
+        placeholder="Search students by name or email..."
+        onkeyup="searchStudents()"
+    >
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="studentsTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Enrollment Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="studentsBody">
+            <tr>
+                <td colspan="6" class="text-center">Loading students...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="pagination" id="pagination"></div>
+
+<script>
+    let currentPage = 1;
+    let itemsPerPage = 10;
+
+    async function loadStudents(page = 1) {
+        const skip = (page - 1) * itemsPerPage;
+        
+        try {
+            // Try to fetch students - the API will use session-based auth for web clients
+            const response = await fetch(`/api/students?skip=${skip}&limit=${itemsPerPage}`);
+            
+            if (response.status === 401) {
+                // If unauthorized, redirect to login
+                window.location.href = '/login';
+                return;
+            }
+            
+            if (response.ok) {
+                const data = await response.json();
+                displayStudents(data.students);
+                displayPagination(data.total, page);
+                currentPage = page;
+            } else {
+                console.error('Error response:', response.status);
+                showAlert('Failed to load students', 'danger');
+            }
+        } catch (error) {
+            console.error('Error loading students:', error);
+            showAlert('Failed to load students', 'danger');
+        }
+    }
+
+    function displayStudents(students) {
+        const tbody = document.getElementById('studentsBody');
+        
+        if (students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No students found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = students.map(student => `
+            <tr>
+                <td>${student.id}</td>
+                <td>${student.first_name} ${student.last_name}</td>
+                <td>${student.email}</td>
+                <td>${student.phone || 'N/A'}</td>
+                <td>${new Date(student.enrollment_date).toLocaleDateString()}</td>
+                <td class="action-buttons">
+                    <a href="/edit-student/${student.id}" class="btn btn-small btn-info">Edit</a>
+                    <button onclick="deleteStudent(${student.id})" class="btn btn-small btn-danger">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function displayPagination(total, currentPage) {
+        const totalPages = Math.ceil(total / itemsPerPage);
+        const paginationDiv = document.getElementById('pagination');
+        
+        if (totalPages <= 1) {
+            paginationDiv.innerHTML = '';
+            return;
+        }
+        
+        let html = '<div class="pagination-buttons">';
+        
+        if (currentPage > 1) {
+            html += `<button onclick="loadStudents(${currentPage - 1})" class="btn btn-small">Previous</button>`;
+        }
+        
+        for (let i = 1; i <= totalPages; i++) {
+            if (i === currentPage) {
+                html += `<button class="btn btn-small active">${i}</button>`;
+            } else {
+                html += `<button onclick="loadStudents(${i})" class="btn btn-small">${i}</button>`;
+            }
+        }
+        
+        if (currentPage < totalPages) {
+            html += `<button onclick="loadStudents(${currentPage + 1})" class="btn btn-small">Next</button>`;
+        }
+        
+        html += '</div>';
+        paginationDiv.innerHTML = html;
+    }
+
+    async function deleteStudent(studentId) {
+        if (!confirm('Are you sure you want to delete this student?')) return;
+        
+        try {
+            const response = await fetch(`/api/students/${studentId}`, {
+                method: 'DELETE',
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                showAlert('Student deleted successfully', 'success');
+                loadStudents(currentPage);
+            } else {
+                showAlert('Failed to delete student', 'danger');
+            }
+        } catch (error) {
+            console.error('Error deleting student:', error);
+            showAlert('An error occurred', 'danger');
+        }
+    }
+
+    function searchStudents() {
+        const searchTerm = document.getElementById('searchInput').value;
+        if (searchTerm.length === 0) {
+            loadStudents(1);
+            return;
+        }
+        
+        fetch(`/api/students?search=${encodeURIComponent(searchTerm)}`, {
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => displayStudents(data.students))
+        .catch(error => console.error('Search error:', error));
+    }
+
+    // Load students on page load
+    loadStudents(1);
+</script>
+{% endblock %}

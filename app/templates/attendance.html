@@ -1,0 +1,111 @@
+{% extends "layout.html" %}
+
+{% block title %}Attendance - Student Management System{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Attendance Management</h1>
+    <a href="#" class="btn btn-primary">+ Mark Attendance</a>
+</div>
+
+<div class="filters-container">
+    <div class="form-row">
+        <div class="form-group">
+            <label for="studentFilter">Select Student</label>
+            <select id="studentFilter" class="form-control" onchange="filterAttendance()">
+                <option value="">All Students</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="courseFilter">Select Course</label>
+            <select id="courseFilter" class="form-control" onchange="filterAttendance()">
+                <option value="">All Courses</option>
+            </select>
+        </div>
+    </div>
+</div>
+
+<div class="table-container">
+    <table class="data-table" id="attendanceTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Student Name</th>
+                <th>Course</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceBody">
+            <tr>
+                <td colspan="6" class="text-center">Loading attendance records...</td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .filters-container {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    async function loadAttendance() {
+        try {
+            const response = await fetch('/api/attendance/student/1', {
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                displayAttendance(data);
+            } else if (response.status === 401) {
+                window.location.href = '/login';
+            }
+        } catch (error) {
+            console.error('Error loading attendance:', error);
+            showAlert('Failed to load attendance records', 'danger');
+        }
+    }
+
+    function displayAttendance(records) {
+        const tbody = document.getElementById('attendanceBody');
+        
+        if (!records || records.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center">No attendance records found</td></tr>';
+            return;
+        }
+        
+        tbody.innerHTML = records.map(record => `
+            <tr>
+                <td>${record.id}</td>
+                <td>${record.student_id}</td>
+                <td>${record.course_id}</td>
+                <td>${new Date(record.date).toLocaleDateString()}</td>
+                <td><span class="badge badge-success">Present</span></td>
+                <td class="action-buttons">
+                    <button class="btn btn-small btn-info">Edit</button>
+                    <button class="btn btn-small btn-danger">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    function filterAttendance() {
+        // Load filtered attendance
+        loadAttendance();
+    }
+
+    // Load attendance on page load
+    loadAttendance();
+</script>
+{% endblock %}

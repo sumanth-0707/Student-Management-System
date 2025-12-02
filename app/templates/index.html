@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+
+{% block title %}Home - Student Management System{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <div class="hero-content">
+        <h1>Welcome to Student Management System</h1>
+        <p>A comprehensive platform for managing students, courses, and attendance</p>
+        {% if is_authenticated %}
+            <div class="hero-buttons">
+                <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                <a href="/students" class="btn btn-secondary">View Students</a>
+            </div>
+        {% else %}
+            <div class="hero-buttons">
+                <a href="/login" class="btn btn-primary">Login</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if is_authenticated %}
+<section class="features">
+    <h2>Quick Access</h2>
+    <div class="features-grid">
+        <div class="feature-card">
+            <div class="feature-icon">👥</div>
+            <h3>Manage Students</h3>
+            <p>Add, edit, and manage student information</p>
+            <a href="/students" class="btn btn-small">Go to Students</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📖</div>
+            <h3>Manage Courses</h3>
+            <p>Create and manage courses for students</p>
+            <a href="/courses" class="btn btn-small">Go to Courses</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">✓</div>
+            <h3>Track Attendance</h3>
+            <p>Monitor student attendance and reports</p>
+            <a href="/attendance" class="btn btn-small">Go to Attendance</a>
+        </div>
+        <div class="feature-card">
+            <div class="feature-icon">📊</div>
+            <h3>View Reports</h3>
+            <p>Generate attendance and performance reports</p>
+            <a href="/dashboard" class="btn btn-small">View Dashboard</a>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endblock %}
