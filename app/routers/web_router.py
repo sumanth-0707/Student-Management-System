@@ -61,7 +61,7 @@ def get_current_user_from_session_required(
         return None
 
 
-@router.get("/")
+@router.get("/home")
 def home(
     request: Request,
     current_admin: Admin = Depends(get_current_user_from_session)
